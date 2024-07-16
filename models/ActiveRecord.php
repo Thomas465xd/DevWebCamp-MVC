@@ -156,18 +156,29 @@ class ActiveRecord {
         return $resultado;      
     }
 
-    // Busqueda Where con Multiples Opciones
-    public static function whereArray($array = []) {
-        $query = "SELECT * FROM " . static::$tabla . " WHERE ";
-        foreach($array as $key => $value) {
-            if($key == array_key_last($array)) {
-                $query .= " $key = '$value'";
-            } else {
-                $query .= " $key = '$value' AND ";
-            }
+    // Versión mejorada de whereArray2
+    public static function whereArrayV2($array = []) {
+        // Verificar si el array está vacío
+        if (empty($array)) {
+            throw new InvalidArgumentException("El array no puede estar vacío.");
         }
+    
+        // Construir la consulta SQL
+        $query = "SELECT * FROM " . static::$tabla . " WHERE ";
+        $conditions = [];
+    
+        foreach($array as $key => $value) {
+            // Utilizar prepared statements para prevenir inyección SQL
+            $conditions[] = "${key} = '" . self::$db->real_escape_string($value) . "'";
+        }
+    
+        // Unir las condiciones con 'AND'
+        $query .= implode(" AND ", $conditions);
+    
+        // Ejecutar la consulta SQL
         $resultado = self::consultarSQL($query);
-        return $resultado;
+        
+        return $resultado ? array_shift($resultado) : null;
     }
     
 
